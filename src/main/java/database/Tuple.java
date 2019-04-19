@@ -3,14 +3,14 @@ package database;
 import java.util.Random;
 
 public class Tuple {
-    private long id;
-    private long idTable;
+    private int id;
+    private int idTable;
     private Integer key;
     private Integer value;
     Random random = new Random();
 
-    public Tuple(long idTable, int key, int value) {
-        this.id = random.nextLong();
+    public Tuple(int idTable, int key, int value) {
+        this.id = random.nextInt(1000);
         this.idTable = idTable;
         this.setKey(key);
         this.setValue(value);
@@ -36,15 +36,19 @@ public class Tuple {
         return idTable;
     }
 
-    public void setIdTable(long idTable) {
+    public void setIdTable(int idTable) {
         this.idTable = idTable;
     }
 
-    public long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
         this.id = id;
+    }
+
+    public String toString() {
+        return id + " " + idTable + " " + key + " " + value + "";
     }
 }

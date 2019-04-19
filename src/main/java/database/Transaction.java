@@ -3,19 +3,20 @@ package database;
 import java.util.Random;
 
 public class Transaction {
-    public long id;
-    public long idTable;
+    public int id;
+    public int numberOfTable;
     public int key;
     public int value;
     public Random random = new Random();
+    public int idTuple;
 
     public Transaction() {
-        this.id = random.nextLong();
+        this.id = random.nextInt(1000);
     }
 
-    public Transaction(long idTable, int key, int value) {
-        this.id = random.nextLong();
-        this.idTable = idTable;
+    public Transaction(int numberOfTable, int key, int value) {
+        this.id = random.nextInt(1000);
+        this.numberOfTable = numberOfTable;
         this.key = key;
         this.value = value;
     }
@@ -25,15 +26,15 @@ public class Transaction {
         this.value = value;
     }
 
-    public void write(long idTable, int key, int value) {
-        setIdTable(idTable);
+    public void write(int idTable, int key, int value) {
+        setNumberOfTable(idTable);
         setKey(key);
         setValue(value);
 
     }
 
-    public void read(long idTable, int key) {
-        setIdTable(idTable);
+    public void read(int idTable, int key) {
+        setNumberOfTable(idTable);
         setKey(key);
         setValue(-1);
 
@@ -44,8 +45,6 @@ public class Transaction {
     }
 
     public void execute() {
-        //найти данные
-        //изменить
     }
 
     public void commit() {
@@ -53,20 +52,20 @@ public class Transaction {
     }
 
 
-    public long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
-    public long getIdTable() {
-        return idTable;
+    public long getNumberOfTable() {
+        return numberOfTable;
     }
 
-    public void setIdTable(long idTable) {
-        this.idTable = idTable;
+    public void setNumberOfTable(int numberOfTable) {
+        this.numberOfTable = numberOfTable;
     }
 
     public int getKey() {
@@ -79,5 +78,9 @@ public class Transaction {
 
     public int getValue() {
         return value;
+    }
+
+    public String toString() {
+        return id + " " + numberOfTable + " " + key + " " + value + "";
     }
 }

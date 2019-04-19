@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Table {
-    public long id;
+    public int id;
     public List<Tuple> tuples = new ArrayList();
 
-    public Table(long idTable) {
+    public Table(int idTable) {
         this.id = idTable;
     }
 
@@ -31,5 +31,20 @@ public class Table {
                 return tuple.getValue();
         }
         return -1;
+    }
+
+    @Override
+    public String toString() {
+        return "Table{" +
+                "id=" + id +
+                ", tuples=" + tuples.toString() +
+                '}';
+    }
+
+    public void print() {
+        System.out.println("Table id " + id);
+        for (Tuple tuple : tuples) {
+            System.out.println(tuple.toString());
+        }
     }
 }

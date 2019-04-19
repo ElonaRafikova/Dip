@@ -3,18 +3,24 @@ package database;
 import java.util.Random;
 
 public class Page {
-    public long id;
-    public long idTable;
+    public int number;
+    public int idTable;
     public Table table;
     public Random random = new Random();
 
-    public Page() {
-        this.id = random.nextLong();
-        this.idTable = random.nextLong();
+    public Page(int numberOfPage) {
+        this.number = numberOfPage;
+        this.idTable = random.nextInt(1000);
         this.table = new Table(idTable);
     }
 
     public void addTupleToTable(int key, int value) {
         table.writeTuple(key, value);
+    }
+
+
+    public void print() {
+        System.out.println("Page " + number + " " + idTable);
+        table.print();
     }
 }

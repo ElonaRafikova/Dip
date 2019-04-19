@@ -9,4 +9,11 @@ public class Disk {
     public void addPage(Page page) {
         pages.add(page);
     }
+
+    public void print() {
+        System.out.println("Disk");
+        for (Page page : pages) {
+            page.print();
+        }
+    }
 }
