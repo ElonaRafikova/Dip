@@ -23,4 +23,16 @@ public class Page {
         System.out.println("Page " + number + " " + idTable);
         table.print();
     }
+    public Page(){
+
+    }
+
+    public Page copyOf() {
+        Page page=new Page();
+        page.idTable=this.idTable;
+        page.number=this.number;
+        page.table=this.table.copyOf();
+        return page;
+
+    }
 }

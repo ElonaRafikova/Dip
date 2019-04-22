@@ -1,5 +1,6 @@
 package tests;
 
+
 import database.TransactionManager;
 import database.TransactionSet;
 import database.Tuple;
@@ -13,6 +14,7 @@ public class SimpleTest extends BaseTest {
         transactionSet = new TransactionSet();
         transactionManager = new TransactionManager(transactionSet.getWriteHeavySet(), database);
     }
+
     @Test
     public void test(){
         /*for (Page page : database.disk.pages) {
@@ -34,9 +36,19 @@ public class SimpleTest extends BaseTest {
         for (Tuple tuple : database.disk.pages.get(0).table.tuples) {
             tuple.setIdTable(0);
         }
+        for (Tuple tuple : database.disk.pages.get(1).table.tuples) {
+            tuple.setIdTable(1);
+        }
         database.print();
         transactionManager.executeTransactions();
+        System.out.println("first set");
+        database.print();
         database.nvram.logFile.print();
+        transactionManager=new TransactionManager(transactionSet.getReadHeavySet(),database);
+        transactionManager.executeTransactions();
+        System.out.println("second set");
+        database.nvram.logFile.print();
+        database.print();
 
 
 

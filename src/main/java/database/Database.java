@@ -37,6 +37,14 @@ public class Database {
                 page.addTupleToTable(4, 44);
                 //disk.addPage(page);
             }
+            if (i == 1) {
+                page.addTupleToTable(0, 555);
+                page.addTupleToTable(1, 111);
+                page.addTupleToTable(2, 222);
+                page.addTupleToTable(3, 333);
+                page.addTupleToTable(4, 444);
+                //disk.addPage(page);
+            }
             for (int j = 0; j < NUMBER_OF_TUPLES; j++) {
                 page.addTupleToTable(random.nextInt(RANGE), random.nextInt(RANGE));
             }
@@ -59,6 +67,12 @@ public class Database {
         }
         dram.dtt.dirtyTuples.clear();
 
+    }
+    public void flushLog(int cp,int cd){
+        for (DTTRecord dttRecord : dram.dtt.dtt) {
+            nvram.logFile.records.add(new LogRecord(dttRecord,cp,cd));
+        }
+        dram.dtt.dtt.clear();
     }
 }
 

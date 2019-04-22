@@ -10,13 +10,13 @@ public class Logger {
     }
 
     public void addToDtt(Transaction transaction, Tuple tuple) {
-        database.dram.dtt.dtt.add(new LogRecord(transaction.id, transaction.numberOfTable, ID_TUPLE));
+        database.dram.dtt.dtt.add(new DTTRecord(transaction.id, transaction.numberOfTable, ID_TUPLE));
         database.dram.dtt.dirtyTuples.add(tuple);
     }
 
-    public void commitTransaction(Transaction transaction) {
-        System.out.println("commit:" + transaction.toString());
-        database.nvram.logFile.records.add(new LogRecord(transaction.id, transaction.numberOfTable, transaction.idTuple));
+    public void commitTransaction(Transaction transaction, int cp, int cd) {
+        //System.out.println("commit:" + transaction.toString());
+        //database.nvram.logFile.records.add(new DTTRecord(transaction.id, transaction.numberOfTable, transaction.idTuple),cp,cd);
 
 
     }

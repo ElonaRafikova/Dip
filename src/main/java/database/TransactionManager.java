@@ -2,11 +2,13 @@ package database;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class TransactionManager {
 
     private List<Transaction> transactionBuffer = new ArrayList<Transaction>();
     private Database database;
+    private Random rand =new Random();
 
     public TransactionManager(List<Transaction> transactions, Database database) {
         transactionBuffer.addAll(transactions);
@@ -22,15 +24,18 @@ public class TransactionManager {
         for (Transaction transaction : transactionBuffer) {
             start(transaction);
             //execute(transaction);
-            commit(transaction);
+            //commit(transaction);
 
         }
-        database.print();
+        groupCommit();
+
     }
+
 
     public Answer findTupleInDram(Transaction transaction) {
         for (Tuple tuple : database.dram.tuplesBuffer) {
             if (tuple.getIdTable() == transaction.getNumberOfTable() && tuple.getKey() == transaction.getKey()) {
+
                 return new Answer(true, null, tuple);
                 //execute
             }
@@ -44,7 +49,7 @@ public class TransactionManager {
             if (page.idTable == transaction.getNumberOfTable()) {
                 for (Tuple tuple : page.table.tuples) {
                     if (tuple.getKey() == transaction.getKey()) {
-                        return new Answer(true, null, tuple);
+                        return new Answer(true, null, tuple.copyOf());
 
                     }
                     //return tuple to dram
@@ -60,7 +65,7 @@ public class TransactionManager {
             if (page.idTable == transaction.getNumberOfTable()) {
                 for (Tuple tuple : page.table.tuples) {
                     if (tuple.getKey() == transaction.getKey()) {
-                        return new Answer(true, page, tuple);
+                        return new Answer(true, page.copyOf(), tuple.copyOf());
                         //return page load to nvram
                         //return tuple to dram
                     }
@@ -118,27 +123,40 @@ public class TransactionManager {
 
     public void execute(Transaction transaction, Tuple tuple) {
         if (transaction.getValue() == -1) {
-            System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
+            System.out.println(database.dram.readTuple(transaction.getKey()));
+            //System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
             System.out.println(transaction.toString());
-            database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey());
-            System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
+            //database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey());
+            System.out.println(database.dram.readTuple(transaction.getKey()));
+            //System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
 
         } else {
             System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
+            System.out.println(database.dram.readTuple(transaction.getKey()));
             System.out.println(transaction.toString());
-            database.disk.pages.get(transaction.numberOfTable).table.writeTuple(transaction.getKey(), transaction.getValue());
+           //database.disk.pages.get(transaction.numberOfTable).table.writeTuple(transaction.getKey(), transaction.getValue());
+            database.dram.writeTuple(transaction.getKey(),transaction.getValue());
             database.logger.addToDtt(transaction, tuple);
             System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
+            System.out.println(database.dram.readTuple(transaction.getKey()));
         }
 
     }
 
-    public void commit(Transaction transaction) {
+   /* public void commit(Transaction transaction) {
         database.flushDTT();
-        database.logger.commitTransaction(transaction);
+        database.logger.commitTransaction(transaction, cp, cd);
+    }*/
+
+    private void groupCommit() {
+        database.flushDTT();
+        int cp=rand.nextInt(1000);
+        int cd=cp+100;
+        database.flushLog(cp,cd);
+
+        /*for (Transaction transaction : transactionBuffer) {
+            database.logger.commitTransaction(transaction,cp,cd);
+        }*/
     }
-
-
-
 
 }

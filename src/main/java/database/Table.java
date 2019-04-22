@@ -47,4 +47,12 @@ public class Table {
             System.out.println(tuple.toString());
         }
     }
+
+    public Table copyOf() {
+        Table table=new Table(this.id);
+        for (Tuple tuple : tuples) {
+            table.tuples.add(tuple.copyOf());
+        }
+        return table;
+    }
 }

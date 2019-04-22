@@ -1,19 +1,20 @@
 package database;
 
 public class LogRecord {
-    public int idTransaction;
-    public int idTable;
-    public int idTuple;
+    public DTTRecord record;
+    public int cp;
+    public int cd;
 
-    public LogRecord(int idTransaction, int idTable, int idTuple) {
-        this.idTransaction = idTransaction;
-        this.idTable = idTable;
-        this.idTuple = idTuple;
+    public LogRecord(DTTRecord record,int cp,int cd) {
+        this.record=record;
+        this.cp=cp;
+        this.cd=cd;
     }
 
     public void print() {
         System.out.println("LogRecord");
-        System.out.println(idTransaction + " " + idTable + " " + idTuple);
+        record.print();
+        System.out.println(cp+" "+cd);
     }
 
 }

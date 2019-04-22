@@ -39,6 +39,16 @@ public class TransactionSet {
 
     public List<Transaction> getReadHeavySet() {
         List<Transaction> set = new ArrayList<Transaction>();
+        for (int i = 0; i < 1; i++) {
+            Transaction tr = new Transaction();
+            tr.write(1, i, random.nextInt(1000));
+            set.add(tr);
+        }
+        for (int i = 0; i < 5; i++) {
+            Transaction tr = new Transaction();
+            tr.read(1, i);
+            set.add(tr);
+        }
         return set;
     }
 

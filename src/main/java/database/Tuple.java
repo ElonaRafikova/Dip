@@ -51,4 +51,17 @@ public class Tuple {
     public String toString() {
         return id + " " + idTable + " " + key + " " + value + "";
     }
+
+    public Tuple() {
+    }
+
+    public Tuple copyOf(){
+        Tuple tuple=new Tuple();
+        tuple.id=this.id;
+        tuple.idTable=this.idTable;
+        tuple.key=this.key;
+        tuple.value=this.value;
+        return  tuple;
+
+    }
 }

@@ -14,4 +14,20 @@ public class DRAM {
             System.out.println(tuple);
         }
     }
+    public void writeTuple(int key, int value) {
+        for (Tuple tuple : tuplesBuffer) {
+            if (tuple.getKey() == key) {
+                tuple.setValue(value);
+            }
+        }
+
+    }
+
+    public Integer readTuple(Integer key) {
+        for (Tuple tuple : tuplesBuffer) {
+            if (tuple.getKey().equals(key))
+                return tuple.getValue();
+        }
+        return -1;
+    }
 }
