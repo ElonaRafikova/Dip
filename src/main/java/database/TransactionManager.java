@@ -9,6 +9,7 @@ public class TransactionManager {
     private List<Transaction> transactionBuffer = new ArrayList<Transaction>();
     private Database database;
     private Random rand =new Random();
+    private static int nowTime = 0;
 
     public TransactionManager(List<Transaction> transactions, Database database) {
         transactionBuffer.addAll(transactions);
@@ -43,6 +44,18 @@ public class TransactionManager {
         return new Answer(false, null, null);
     }
 
+    ///for dtt
+    public Tuple findTupleInDram(Integer idTuple, int key) {
+        for (Tuple tuple : database.dram.tuplesBuffer) {
+            if (tuple.getId() == idTuple && tuple.getKey() == key) {
+
+                return tuple;
+                //execute
+            }
+        }
+        return null;
+    }
+
     public Answer findTupleInNVRAM(Transaction transaction) {
 
         for (Page page : database.nvram.pages) {
@@ -52,8 +65,14 @@ public class TransactionManager {
                         return new Answer(true, null, tuple.copyOf());
 
                     }
-                    //return tuple to dram
                 }
+            }
+        }
+
+        //find in database.nvram.tuples
+        for (Tuple tuple : database.nvram.tuples) {
+            if (tuple.getKey() == transaction.getKey() && tuple.getIdTable() == transaction.getNumberOfTable()) {
+                return new Answer(true, null, tuple.copyOf());
             }
         }
         return new Answer(false, null, null);
@@ -84,24 +103,28 @@ public class TransactionManager {
         Answer isFoundDisk;
         Answer foundDram = findTupleInDram(transaction);
         if (foundDram.is) {
-            execute(transaction, foundDram.tuple);
             transaction.idTuple = foundDram.tuple.getId();
+            execute(transaction);
+
         } else {
             isFoundNvram = findTupleInNVRAM(transaction);
             if (isFoundNvram.is) {
-                database.dram.tuplesBuffer.add(isFoundNvram.tuple);
-                execute(transaction, isFoundNvram.tuple);
+
                 transaction.idTuple = isFoundNvram.tuple.getId();
+                database.dram.tuplesBuffer.add(isFoundNvram.tuple);
+                execute(transaction);
             } else {
                 isFoundDisk = findPageInDisk(transaction);
                 if (isFoundDisk.is) {
+
+                    transaction.idTuple = isFoundDisk.tuple.getId();
                     database.nvram.pages.add(isFoundDisk.page);
                     database.dram.tuplesBuffer.add(isFoundDisk.tuple);
-                    execute(transaction, isFoundDisk.tuple);
-                    transaction.idTuple = isFoundDisk.tuple.getId();
+                    execute(transaction);
                 } else {
                     if (transaction.getValue() == -1) {
                         System.out.println("can not read");
+                        System.out.println(transaction.toString());
                     } else {
                         database.dram.tuplesBuffer.add(new Tuple(transaction.numberOfTable, transaction.getKey(), transaction.getValue()));
                     }
@@ -112,51 +135,34 @@ public class TransactionManager {
 
     }
 
-    private Page getPageFromDisk(Transaction transaction) {
-        return new Page(1);
-    }
-
-    private Tuple getTupleFromNvram(Transaction transaction) {
-        return new Tuple(1, 1, 1);
-    }
-
-
-    public void execute(Transaction transaction, Tuple tuple) {
+    public void execute(Transaction transaction) {
         if (transaction.getValue() == -1) {
-            System.out.println(database.dram.readTuple(transaction.getKey()));
-            //System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
-            System.out.println(transaction.toString());
+            System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
+            System.out.println(database.dram.readTuple(transaction.getKey(), transaction.numberOfTable));
             //database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey());
-            System.out.println(database.dram.readTuple(transaction.getKey()));
-            //System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
+            System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
+            System.out.println(database.dram.readTuple(transaction.getKey(), transaction.numberOfTable));
 
         } else {
             System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
-            System.out.println(database.dram.readTuple(transaction.getKey()));
-            System.out.println(transaction.toString());
+            System.out.println(database.dram.readTuple(transaction.getKey(), transaction.numberOfTable));
            //database.disk.pages.get(transaction.numberOfTable).table.writeTuple(transaction.getKey(), transaction.getValue());
             database.dram.writeTuple(transaction.getKey(),transaction.getValue());
-            database.logger.addToDtt(transaction, tuple);
+            database.logger.addToDtt(transaction);
             System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
-            System.out.println(database.dram.readTuple(transaction.getKey()));
+            System.out.println(database.dram.readTuple(transaction.getKey(), transaction.numberOfTable));
         }
+        transaction.commitTimestamp = System.nanoTime();
+        System.out.println(transaction.toString());
 
     }
 
-   /* public void commit(Transaction transaction) {
-        database.flushDTT();
-        database.logger.commitTransaction(transaction, cp, cd);
-    }*/
-
     private void groupCommit() {
         database.flushDTT();
-        int cp=rand.nextInt(1000);
+        int cp = nowTime + rand.nextInt(100);
         int cd=cp+100;
         database.flushLog(cp,cd);
-
-        /*for (Transaction transaction : transactionBuffer) {
-            database.logger.commitTransaction(transaction,cp,cd);
-        }*/
+        nowTime = cd;
     }
 
 }

@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Table {
     public int id;
-    public List<Tuple> tuples = new ArrayList();
+    public List<Tuple> tuples = new ArrayList<Tuple>();
 
     public Table(int idTable) {
         this.id = idTable;

@@ -9,6 +9,8 @@ public class Transaction {
     public int value;
     public Random random = new Random();
     public int idTuple;
+    public long commitTimestamp;
+
 
     public Transaction() {
         this.id = random.nextInt(1000);
@@ -81,6 +83,6 @@ public class Transaction {
     }
 
     public String toString() {
-        return id + " " + numberOfTable + " " + key + " " + value + "";
+        return id + " " + numberOfTable + " " + idTuple + " " + key + " " + value + " " + commitTimestamp;
     }
 }

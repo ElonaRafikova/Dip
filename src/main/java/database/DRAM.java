@@ -5,8 +5,8 @@ import java.util.List;
 
 public class DRAM {
     public List<Tuple> tuplesBuffer = new ArrayList<Tuple>();
-    //public List<LogRecord> dtt = new ArrayList<LogRecord>();
-    public DTT dtt = new DTT();
+    public List<DTTRecord> dtt = new ArrayList<DTTRecord>();
+    //public DTT dtt = new DTT();
 
     public void print() {
         System.out.println("DRAM");
@@ -23,9 +23,9 @@ public class DRAM {
 
     }
 
-    public Integer readTuple(Integer key) {
+    public Integer readTuple(Integer key, Integer idTable) {
         for (Tuple tuple : tuplesBuffer) {
-            if (tuple.getKey().equals(key))
+            if (tuple.getKey().equals(key) && tuple.getIdTable() == idTable)
                 return tuple.getValue();
         }
         return -1;

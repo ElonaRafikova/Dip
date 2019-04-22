@@ -62,17 +62,31 @@ public class Database {
 
 
     public void flushDTT() {
-        for (Tuple dirtyTuple : dram.dtt.dirtyTuples) {
-            nvram.addTuple(dirtyTuple);
+        for (DTTRecord dttRecord : dram.dtt) {
+            nvram.addTuple(findTupleInDram(dttRecord.idTuple, dttRecord.idTable));
         }
-        dram.dtt.dirtyTuples.clear();
+
+        /*for (Tuple dirtyTuple : dram.dtt.dirtyTuples) {
+            nvram.addTuple(dirtyTuple);
+        }*/
+        // dram.dtt.dirtyTuples.clear();
 
     }
     public void flushLog(int cp,int cd){
-        for (DTTRecord dttRecord : dram.dtt.dtt) {
+        for (DTTRecord dttRecord : dram.dtt) {
             nvram.logFile.records.add(new LogRecord(dttRecord,cp,cd));
         }
-        dram.dtt.dtt.clear();
+        dram.dtt.clear();
+    }
+
+    public Tuple findTupleInDram(Integer idTuple, int idTable) {
+        for (Tuple tuple : this.dram.tuplesBuffer) {
+            if (tuple.getId() == idTuple && tuple.getIdTable() == idTable) {
+                return tuple;
+                //execute
+            }
+        }
+        return null;
     }
 }
 

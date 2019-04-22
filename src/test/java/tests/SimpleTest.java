@@ -36,6 +36,7 @@ public class SimpleTest extends BaseTest {
         for (Tuple tuple : database.disk.pages.get(0).table.tuples) {
             tuple.setIdTable(0);
         }
+        database.disk.pages.get(1).idTable = 1;
         for (Tuple tuple : database.disk.pages.get(1).table.tuples) {
             tuple.setIdTable(1);
         }
@@ -47,8 +48,9 @@ public class SimpleTest extends BaseTest {
         transactionManager=new TransactionManager(transactionSet.getReadHeavySet(),database);
         transactionManager.executeTransactions();
         System.out.println("second set");
-        database.nvram.logFile.print();
+
         database.print();
+        database.nvram.logFile.print();
 
 
 

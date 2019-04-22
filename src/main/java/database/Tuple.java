@@ -64,4 +64,19 @@ public class Tuple {
         return  tuple;
 
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Tuple tuple = (Tuple) o;
+
+        return id == tuple.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
 }
