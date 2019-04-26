@@ -14,8 +14,8 @@ public class Page {
         this.table = new Table(idTable);
     }
 
-    public void addTupleToTable(int key, int value) {
-        table.writeTuple(key, value);
+    public void addTupleToTable(Tuple tuple, int idTransaction) {
+        table.writeTuple(tuple.getKey(), tuple.getValue(), idTransaction, tuple.time);
     }
 
 

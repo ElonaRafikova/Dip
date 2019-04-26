@@ -41,12 +41,12 @@ public class SimpleTest extends BaseTest {
             tuple.setIdTable(1);
         }
         database.print();
-        transactionManager.executeTransactions();
+        transactionManager.startExecution();//executeTransactions();
         System.out.println("first set");
         database.print();
         database.nvram.logFile.print();
         transactionManager=new TransactionManager(transactionSet.getReadHeavySet(),database);
-        transactionManager.executeTransactions();
+        transactionManager.startExecution();//executeTransactions();
         System.out.println("second set");
 
         database.print();

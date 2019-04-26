@@ -2,19 +2,18 @@ package database;
 
 public class LogRecord {
     public DTTRecord record;
-    public int cp;
-    public int cd;
+    public CommitGap commitGap = new CommitGap();
 
-    public LogRecord(DTTRecord record,int cp,int cd) {
+    public LogRecord(DTTRecord record, long cp, long cd) {
         this.record=record;
-        this.cp=cp;
-        this.cd=cd;
+        this.commitGap.cp = cp;
+        this.commitGap.cd = cd;
     }
 
     public void print() {
         System.out.println("LogRecord");
         record.print();
-        System.out.println(cp+" "+cd);
+        System.out.println(commitGap.cp + " " + commitGap.cd);
     }
 
 }

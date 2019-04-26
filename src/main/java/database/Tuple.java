@@ -5,6 +5,10 @@ import java.util.Random;
 public class Tuple {
     private int id;
     private int idTable;
+    public int previousVersion;
+    public int committedTransactionId;
+    public long time;
+    public Boolean isValid;
     private Integer key;
     private Integer value;
     Random random = new Random();
@@ -14,6 +18,13 @@ public class Tuple {
         this.idTable = idTable;
         this.setKey(key);
         this.setValue(value);
+        this.isValid = true;
+    }
+
+    public Tuple(int key, int value) {
+        this.key = key;
+        this.value = value;
+
     }
 
     private void setKey(int key) {
@@ -49,7 +60,7 @@ public class Tuple {
     }
 
     public String toString() {
-        return id + " " + idTable + " " + key + " " + value + "";
+        return id + " " + idTable + " " + key + " " + value + " " + isValid + " " + previousVersion + " " + committedTransactionId + " " + time;
     }
 
     public Tuple() {
@@ -61,6 +72,10 @@ public class Tuple {
         tuple.idTable=this.idTable;
         tuple.key=this.key;
         tuple.value=this.value;
+        tuple.isValid = this.isValid;
+        tuple.previousVersion = this.previousVersion;
+        tuple.committedTransactionId = this.committedTransactionId;
+        tuple.time = this.time;
         return  tuple;
 
     }
@@ -78,5 +93,9 @@ public class Tuple {
     @Override
     public int hashCode() {
         return id;
+    }
+
+    public void setRandomId() {
+        this.id = random.nextInt(1000);
     }
 }

@@ -11,23 +11,29 @@ public class Table {
         this.id = idTable;
     }
 
-    public void writeTuple(int key, int value) {
-        boolean isKey = false;
+    public void writeTuple(int key, int value, int transactionId, long time) {
+
         for (Tuple tuple : tuples) {
             if (tuple.getKey() == key) {
-                tuple.setValue(value);
-                isKey = true;
+                Tuple newTuple = tuple.copyOf();
+                newTuple.setRandomId();
+                newTuple.setValue(value);
+                newTuple.previousVersion = tuple.getId();
+                tuple.isValid = false;
+                newTuple.committedTransactionId = transactionId;
+                newTuple.time = time;
+                tuples.add(newTuple);
+                return;
             }
         }
-        if (!isKey) {
-            Tuple tuple = new Tuple(id, key, value);
-            tuples.add(tuple);
-        }
+        Tuple tuple = new Tuple(id, key, value);
+        tuples.add(tuple);
+
     }
 
     public Integer readTuple(Integer key) {
         for (Tuple tuple : tuples) {
-            if (tuple.getKey().equals(key))
+            if (tuple.getKey().equals(key) && tuple.isValid)
                 return tuple.getValue();
         }
         return -1;

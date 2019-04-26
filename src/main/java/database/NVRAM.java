@@ -18,17 +18,20 @@ public class NVRAM {
         }
     }
 
-    public void addTuple(Tuple dirtyTuple) {
-        boolean isPage = false;
+    public void addTuple(Tuple dirtyTuple, int idTransaction) {
+
         for (Page page : pages) {
             if (page.idTable == dirtyTuple.getIdTable()) {
-                page.addTupleToTable(dirtyTuple.getKey(), dirtyTuple.getValue());
-                isPage = true;
+                page.addTupleToTable(dirtyTuple, idTransaction);
+                return;
             }
 
         }
-        if (!isPage)
-            tuples.add(dirtyTuple);
+        tuples.add(dirtyTuple.copyOf());
 
+    }
+
+    public CommitGap getLastCommitGap() {
+        return logFile.records.get(logFile.records.size() - 1).commitGap;
     }
 }

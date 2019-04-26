@@ -44,7 +44,7 @@ public class TransactionSet {
             tr.write(1, i, random.nextInt(1000));
             set.add(tr);
         }
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             Transaction tr = new Transaction();
             tr.read(1, i);
             set.add(tr);

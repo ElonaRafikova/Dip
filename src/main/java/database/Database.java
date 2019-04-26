@@ -29,24 +29,25 @@ public class Database {
         Random random = new Random();
         for (int i = 0; i < NUMBER_OF_PAGES; i++) {
             Page page = new Page(i);
+            int idTransaction = 0;
             if (i == 0) {
-                page.addTupleToTable(0, 55);
-                page.addTupleToTable(1, 11);
-                page.addTupleToTable(2, 22);
-                page.addTupleToTable(3, 33);
-                page.addTupleToTable(4, 44);
+                page.addTupleToTable(new Tuple(0, 55), idTransaction);
+                page.addTupleToTable(new Tuple(1, 11), idTransaction);
+                page.addTupleToTable(new Tuple(2, 22), idTransaction);
+                page.addTupleToTable(new Tuple(3, 33), idTransaction);
+                page.addTupleToTable(new Tuple(4, 44), idTransaction);
                 //disk.addPage(page);
             }
             if (i == 1) {
-                page.addTupleToTable(0, 555);
-                page.addTupleToTable(1, 111);
-                page.addTupleToTable(2, 222);
-                page.addTupleToTable(3, 333);
-                page.addTupleToTable(4, 444);
+                page.addTupleToTable(new Tuple(0, 555), idTransaction);
+                page.addTupleToTable(new Tuple(1, 111), idTransaction);
+                page.addTupleToTable(new Tuple(2, 222), idTransaction);
+                page.addTupleToTable(new Tuple(3, 333), idTransaction);
+                page.addTupleToTable(new Tuple(4, 444), idTransaction);
                 //disk.addPage(page);
             }
             for (int j = 0; j < NUMBER_OF_TUPLES; j++) {
-                page.addTupleToTable(random.nextInt(RANGE), random.nextInt(RANGE));
+                page.addTupleToTable(new Tuple(random.nextInt(RANGE), random.nextInt(RANGE)), idTransaction);
             }
             disk.addPage(page);
 
@@ -63,8 +64,11 @@ public class Database {
 
     public void flushDTT() {
         for (DTTRecord dttRecord : dram.dtt) {
-            nvram.addTuple(findTupleInDram(dttRecord.idTuple, dttRecord.idTable));
+            Tuple tupleInDram = findTupleInDram(dttRecord.idTuple, dttRecord.idTable);
+            //tupleInDram.committedTransactionId=dttRecord.idTransaction;
+            nvram.addTuple(tupleInDram, dttRecord.idTransaction);
         }
+        // dram.dtt.clear();
 
         /*for (Tuple dirtyTuple : dram.dtt.dirtyTuples) {
             nvram.addTuple(dirtyTuple);
@@ -72,7 +76,8 @@ public class Database {
         // dram.dtt.dirtyTuples.clear();
 
     }
-    public void flushLog(int cp,int cd){
+
+    public void flushLog(long cp, long cd) {
         for (DTTRecord dttRecord : dram.dtt) {
             nvram.logFile.records.add(new LogRecord(dttRecord,cp,cd));
         }
@@ -88,5 +93,7 @@ public class Database {
         }
         return null;
     }
+
+
 }
 
