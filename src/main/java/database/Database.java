@@ -1,14 +1,14 @@
 package database;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import static database.Latency.*;
+
 
 public class Database {
-    private static final int NUMBER_OF_PAGES = 5;
-    private static final int NUMBER_OF_TUPLES = 10;
-    private static final int RANGE = 1000;
     public Disk disk;
     public NVRAM nvram;
     public DRAM dram;
@@ -25,33 +25,11 @@ public class Database {
     }
 
     //перенести в utility
-    public void fillDatabase() {
-        Random random = new Random();
-        for (int i = 0; i < NUMBER_OF_PAGES; i++) {
-            Page page = new Page(i);
-            int idTransaction = 0;
-            if (i == 0) {
-                page.addTupleToTable(new Tuple(0, 55), idTransaction);
-                page.addTupleToTable(new Tuple(1, 11), idTransaction);
-                page.addTupleToTable(new Tuple(2, 22), idTransaction);
-                page.addTupleToTable(new Tuple(3, 33), idTransaction);
-                page.addTupleToTable(new Tuple(4, 44), idTransaction);
-                //disk.addPage(page);
-            }
-            if (i == 1) {
-                page.addTupleToTable(new Tuple(0, 555), idTransaction);
-                page.addTupleToTable(new Tuple(1, 111), idTransaction);
-                page.addTupleToTable(new Tuple(2, 222), idTransaction);
-                page.addTupleToTable(new Tuple(3, 333), idTransaction);
-                page.addTupleToTable(new Tuple(4, 444), idTransaction);
-                //disk.addPage(page);
-            }
-            for (int j = 0; j < NUMBER_OF_TUPLES; j++) {
-                page.addTupleToTable(new Tuple(random.nextInt(RANGE), random.nextInt(RANGE)), idTransaction);
-            }
-            disk.addPage(page);
-
-        }
+    public void fillDatabaseWBL(List<Page> pagesToAdd) {
+        nvram.pages.addAll(pagesToAdd);
+    }
+    public void fillDatabaseMyWBL(List<Page> pagesToAdd) {
+        disk.pages.addAll(pagesToAdd);
     }
 
     public void print() {
@@ -64,31 +42,29 @@ public class Database {
 
     public void flushDTT() {
         for (DTTRecord dttRecord : dram.dtt) {
+            dramReadLatency();
             Tuple tupleInDram = findTupleInDram(dttRecord.idTuple, dttRecord.idTable);
-            //tupleInDram.committedTransactionId=dttRecord.idTransaction;
+            nvramWriteLatency();
             nvram.addTuple(tupleInDram, dttRecord.idTransaction);
         }
-        // dram.dtt.clear();
-
-        /*for (Tuple dirtyTuple : dram.dtt.dirtyTuples) {
-            nvram.addTuple(dirtyTuple);
-        }*/
-        // dram.dtt.dirtyTuples.clear();
 
     }
 
     public void flushLog(long cp, long cd) {
         for (DTTRecord dttRecord : dram.dtt) {
+            dramReadLatency();
+            nvramWriteLatency();
             nvram.logFile.records.add(new LogRecord(dttRecord,cp,cd));
+            dramWriteLatency();
         }
         dram.dtt.clear();
     }
 
     public Tuple findTupleInDram(Integer idTuple, int idTable) {
         for (Tuple tuple : this.dram.tuplesBuffer) {
+            dramReadLatency();
             if (tuple.getId() == idTuple && tuple.getIdTable() == idTable) {
                 return tuple;
-                //execute
             }
         }
         return null;

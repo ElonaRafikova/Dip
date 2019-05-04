@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LogFile {
-    List<LogRecord> records = new ArrayList<LogRecord>();
+    public  List<LogRecord> records = new ArrayList<LogRecord>();
 
     public void print() {
         System.out.println("LogFile");

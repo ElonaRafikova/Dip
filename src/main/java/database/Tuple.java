@@ -9,8 +9,8 @@ public class Tuple {
     public int committedTransactionId;
     public long time;
     public Boolean isValid;
-    private Integer key;
-    private Integer value;
+    private int key;
+    private int value;
     Random random = new Random();
 
     public Tuple(int idTable, int key, int value) {

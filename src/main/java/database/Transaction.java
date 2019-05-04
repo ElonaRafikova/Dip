@@ -1,7 +1,10 @@
 package database;
 
+
+
 import java.util.Random;
 
+import static database.Constants.*;
 public class Transaction {
     public int id;
     public int numberOfTable;
@@ -13,11 +16,11 @@ public class Transaction {
 
 
     public Transaction() {
-        this.id = random.nextInt(1000);
+        this.id = random.nextInt(RANGE);
     }
 
     public Transaction(int numberOfTable, int key, int value) {
-        this.id = random.nextInt(1000);
+        this.id = random.nextInt(RANGE);
         this.numberOfTable = numberOfTable;
         this.key = key;
         this.value = value;
@@ -41,18 +44,6 @@ public class Transaction {
         setValue(-1);
 
     }
-
-    public void start() {
-
-    }
-
-    public void execute() {
-    }
-
-    public void commit() {
-        //логгер
-    }
-
 
     public int getId() {
         return id;

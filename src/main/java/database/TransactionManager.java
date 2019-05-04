@@ -2,53 +2,81 @@ package database;
 
 import java.util.*;
 
+import static database.Latency.*;
+
+import static database.Constants.*;
+
 public class TransactionManager {
 
     private List<Transaction> transactionBuffer = new ArrayList<Transaction>();
     private Database database;
-    private Random rand =new Random();
-    private static int nowTime = 0;
     private static long nowTimestamp;
-    private static long gap = 1000000;
     private static long startTimestamp;
     private static long nextGroupCommit;
     private static List<Transaction> doneList = new ArrayList<Transaction>();
-    private static Set<CommitGap> gaps = new HashSet<CommitGap>();
+    private static CommitGap lastGap=new CommitGap(0,0);
     private static List<Transaction> groupCommit = new ArrayList<Transaction>();
+    private boolean isDisk;
 
-    public TransactionManager(List<Transaction> transactions, Database database) {
+    public TransactionManager(List<Transaction> transactions, Database database ,boolean isDisk) {
         transactionBuffer.addAll(transactions);
         this.database = database;
+        this.isDisk=isDisk;
     }
 
-    public void addTransaction(Transaction transaction) {
-        transactionBuffer.add(transaction);
-    }
-
-    public void startExecution() {
+    public void startExecution()  {
         startTimestamp = System.nanoTime();
         nextGroupCommit = gap;
         executeTransactions();
     }
 
-    public void executeTransactions() {
-        //nowTimestamp=System.nanoTime();
-        // startTimestamp=System.nanoTime();
-        //System.out.println(startTimestamp);
-
+    public void executeTransactions()  {
         int i = 0;
         while (i < transactionBuffer.size()) {
-            // long n=System.nanoTime();
-            //long nt=n- startTimestamp;
-            //System.out.println(n);
-            //System.out.println(nt);
-            //System.out.println(nowTimestamp);
-            nowTimestamp = System.nanoTime() - startTimestamp;
+            nowTimestamp = System.nanoTime() /startTimestamp;
             if (nowTimestamp < nextGroupCommit) {
-                start(transactionBuffer.get(i));
+                if (isDisk){
+                    startWithDisk(transactionBuffer.get(i));
+                }
+                else {
+                    startNoDisk(transactionBuffer.get(i));
+                }
                 groupCommit.add(transactionBuffer.get(i));
                 i++;
-                if (i == 4) {
+                /*if (i == 4) {
+                    doFailure();
+                    return;
+                }*/
+            } else {
+                System.out.println(groupCommit.size());
+                doGroupCommit(groupCommit);
+
+            }
+        }
+        doGroupCommit(groupCommit);
+        System.out.println("All transaction from set is done");
+    }
+
+    public void startExecutionWithFailure()  {
+        startTimestamp = System.nanoTime();
+        nextGroupCommit = gap;
+        executeTransactionsWithFailure();
+    }
+
+    public void executeTransactionsWithFailure()  {
+        int i = 0;
+        while (i < transactionBuffer.size()) {
+            nowTimestamp = System.nanoTime() /startTimestamp;
+            if (nowTimestamp < nextGroupCommit) {
+                if (isDisk){
+                    startWithDisk(transactionBuffer.get(i));
+                }
+                else {
+                    startNoDisk(transactionBuffer.get(i));
+                }
+                groupCommit.add(transactionBuffer.get(i));
+                i++;
+                if (i == FAILURE) {
                     doFailure();
                     return;
                 }
@@ -57,11 +85,11 @@ public class TransactionManager {
                 doGroupCommit(groupCommit);
 
             }
-
         }
         doGroupCommit(groupCommit);
         System.out.println("All transaction from set is done");
     }
+
 
 
     private void doGroupCommit(List<Transaction> groupCommit) {
@@ -69,74 +97,81 @@ public class TransactionManager {
             groupCommit(groupCommit);
             doneList.addAll(groupCommit);
             groupCommit.clear();
-            System.out.println("done: " + doneList.size());
+
         }
-        nextGroupCommit += gap;
+        else {
+            nextGroupCommit +=gap;
+            lastGap.cd=nextGroupCommit;
+            nvramWriteLatency();
+            database.nvram.logFile.records.add(new LogRecord(new DTTRecord(0,0,0),lastGap.cp,nextGroupCommit));
+        }
     }
 
     private void groupCommit(List<Transaction> groupCommit) {
-        System.out.println("group commit");
         long cp = groupCommit.get(groupCommit.size() - 1).commitTimestamp;
         database.flushDTT();
-        long cd = System.nanoTime() - startTimestamp + gap;
+        long cd = System.nanoTime() /startTimestamp + gap;
         nextGroupCommit = cd;
+        lastGap.cp=cp;
+        lastGap.cd=cd;
         database.flushLog(cp, cd);
         System.out.println(cp + " " + " " + cd);
         System.out.println("end Group Commit");
 
     }
 
-    private void falseFlushToNVRAM(List<Transaction> groupCommit) {
-        System.out.println("false flush");
+    private void falseFlushToNVRAM() {
         database.flushDTT();
-        database.nvram.print();
     }
 
-    public void doFailure() {
-        falseFlushToNVRAM(groupCommit);
-        database.dram.print();
-        System.out.println("failure");
-        database.dram.dtt.clear();
+    public void doFailure()  {
+        falseFlushToNVRAM();
+        for(int i=0;i<database.dram.tuplesBuffer.size();i++) {
+        dramWriteLatency();
+        }
         database.dram.tuplesBuffer.clear();
+        for(int i=0;i<database.dram.dtt.size();i++) {
+            dramWriteLatency();
+        }
+        database.dram.dtt.clear();
         groupCommit.clear();
         doRecovery();
-        database.print();
         continueExecution();
     }
 
 
-    private void continueExecution() {
-        transactionBuffer.removeAll(doneList);//from log
-        System.out.println("next commit " + nextGroupCommit);
-        System.out.println("continui" + (System.nanoTime() - startTimestamp));
-        //nextGroupCommit+=gap;
-        System.out.println("next commit " + nextGroupCommit);
+    private void continueExecution()  {
+        transactionBuffer.removeAll(doneList);
+        long timestamp=System.nanoTime()/startTimestamp;
+        if (timestamp>nextGroupCommit) {
+            nextGroupCommit=timestamp+gap;
+            lastGap.cp=timestamp;
+            lastGap.cd=timestamp+gap;
+        }
         executeTransactions();
     }
 
     private void doRecovery() {
-        gaps.add(database.nvram.getLastCommitGap());
+        long startRecovery=System.nanoTime();
         System.out.println("gaps");
-        for (CommitGap commitGap : gaps) {
-            System.out.println(commitGap.cp + " " + commitGap.cd);
-        }
+            System.out.println(lastGap.cp + " " + lastGap.cd);
         garbageCollector();
+        System.out.println("recovery time :"+(System.nanoTime()-startRecovery)/Math.pow(10,9));
     }
 
     private void garbageCollector() {
         recoveryNvram();
-        //recoveryDisk();
-    }
-
-    private void recoveryDisk() {
     }
 
     private void recoveryNvram() {
         List<Integer> activeList = new ArrayList<Integer>();
         for (Page page : database.nvram.pages) {
             for (Tuple tuple : page.table.tuples) {
-                if (checkInGap(tuple, gaps)) {
+                nvramReadLatency();
+                if (checkInGap(tuple, lastGap)) {
+                    nvramWriteLatency();
                     tuple.isValid = false;
+                    nvramReadLatency();
                     if (tuple.previousVersion != 0)
                         activeList.add(tuple.previousVersion);
                 }
@@ -150,10 +185,12 @@ public class TransactionManager {
         List<Integer> newActiveList = new ArrayList<Integer>();
         for (Integer idTuple : activeList) {
             Tuple tupleWithId = getTupleWithId(idTuple);
-            if (checkInGap(tupleWithId, gaps)) {
-                tupleWithId.isValid = false;
+            if (checkInGap(tupleWithId, lastGap)) {
                 if (tupleWithId.previousVersion != 0)
                     newActiveList.add(tupleWithId.previousVersion);
+            }
+            else {
+                tupleWithId.isValid=true;
             }
         }
         if (!newActiveList.isEmpty())
@@ -163,6 +200,7 @@ public class TransactionManager {
     private Tuple getTupleWithId(Integer idTuple) {
         for (Page page : database.nvram.pages) {
             for (Tuple tuple : page.table.tuples) {
+                nvramReadLatency();
                 if (tuple.getId() == idTuple)
                     return tuple;
             }
@@ -170,61 +208,37 @@ public class TransactionManager {
         return null;
     }
 
-    private Boolean checkInGap(Tuple tuple, Set<CommitGap> gaps) {
-        for (CommitGap commitGap : gaps) {
-            if (tuple.committedTransactionId < commitGap.cd && tuple.committedTransactionId > commitGap.cp)
-                return true;
-        }
-        return false;
-    }
-
-    private void groupCommit() {
-        database.flushDTT();
-        int cp = nowTime + rand.nextInt(100);
-        int cd = cp + 100;
-        database.flushLog(cp, cd);
-        nowTime = cd;
-
+    private Boolean checkInGap(Tuple tuple, CommitGap gap) {
+        return (tuple.time < gap.cd && tuple.time > gap.cp);
     }
 
 
-    public Answer findTupleInDram(Transaction transaction) {
+    public Answer findTupleInDram(Transaction transaction)  {
         for (Tuple tuple : database.dram.tuplesBuffer) {
+            dramReadLatency();
             if (tuple.getIdTable() == transaction.getNumberOfTable() && tuple.getKey() == transaction.getKey()) {
                 return new Answer(true, null, tuple);
-                //execute
             }
         }
         return new Answer(false, null, null);
     }
 
-    ///for dtt
-    public Tuple findTupleInDram(Integer idTuple, int key) {
-        for (Tuple tuple : database.dram.tuplesBuffer) {
-            if (tuple.getId() == idTuple && tuple.getKey() == key) {
-
-                return tuple;
-                //execute
-            }
-        }
-        return null;
-    }
 
     public Answer findTupleInNVRAM(Transaction transaction) {
 
         for (Page page : database.nvram.pages) {
             if (page.idTable == transaction.getNumberOfTable()) {
                 for (Tuple tuple : page.table.tuples) {
+                    nvramReadLatency();
                     if (tuple.getKey() == transaction.getKey() && tuple.isValid) {
                         return new Answer(true, null, tuple.copyOf());
-
                     }
                 }
             }
         }
 
-        //find in database.nvram.tuples
         for (Tuple tuple : database.nvram.tuples) {
+            nvramReadLatency();
             if (tuple.getKey() == transaction.getKey() && tuple.getIdTable() == transaction.getNumberOfTable() && tuple.isValid) {
                 return new Answer(true, null, tuple.copyOf());
             }
@@ -235,24 +249,21 @@ public class TransactionManager {
 
     public Answer findPageInDisk(Transaction transaction) {
         for (Page page : database.disk.pages) {
+            diskReadLatency();
             if (page.idTable == transaction.getNumberOfTable()) {
                 for (Tuple tuple : page.table.tuples) {
                     if (tuple.getKey() == transaction.getKey()) {
                         return new Answer(true, page.copyOf(), tuple.copyOf());
-                        //return page load to nvram
-                        //return tuple to dram
                     }
                 }
             }
         }
 
         return new Answer(false, null, null);
-        //write empty tuple to dram
-
     }
 
 
-    public void start(Transaction transaction) {
+    public void startWithDisk(Transaction transaction)  {
         Answer isFoundNvram;
         Answer isFoundDisk;
         Answer foundDram = findTupleInDram(transaction);
@@ -263,16 +274,18 @@ public class TransactionManager {
         } else {
             isFoundNvram = findTupleInNVRAM(transaction);
             if (isFoundNvram.is) {
-
                 transaction.idTuple = isFoundNvram.tuple.getId();
+                dramWriteLatency();
                 database.dram.tuplesBuffer.add(isFoundNvram.tuple);
                 execute(transaction);
             } else {
                 isFoundDisk = findPageInDisk(transaction);
                 if (isFoundDisk.is) {
-
                     transaction.idTuple = isFoundDisk.tuple.getId();
+                    nvramReadLatency();
+                    nvramWritePageLatency();
                     database.nvram.pages.add(isFoundDisk.page);
+                    dramWriteLatency();
                     database.dram.tuplesBuffer.add(isFoundDisk.tuple);
                     execute(transaction);
                 } else {
@@ -280,6 +293,7 @@ public class TransactionManager {
                         System.out.println("can not read");
                         System.out.println(transaction.toString());
                     } else {
+                        dramWriteLatency();
                         database.dram.tuplesBuffer.add(new Tuple(transaction.numberOfTable, transaction.getKey(), transaction.getValue()));
                     }
 
@@ -288,25 +302,47 @@ public class TransactionManager {
         }
 
     }
-
-    public void execute(Transaction transaction) {
-        if (transaction.getValue() == -1) {
-            System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
-            System.out.println(database.dram.readTuple(transaction.getKey(), transaction.numberOfTable));
-            //database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey());
-            System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
-            System.out.println(database.dram.readTuple(transaction.getKey(), transaction.numberOfTable));
+    public void startNoDisk(Transaction transaction)  {
+        Answer isFoundNvram;
+        Answer foundDram = findTupleInDram(transaction);
+        if (foundDram.is) {
+            transaction.idTuple = foundDram.tuple.getId();
+            execute(transaction);
 
         } else {
-            System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
+            isFoundNvram = findTupleInNVRAM(transaction);
+            if (isFoundNvram.is) {
+                transaction.idTuple = isFoundNvram.tuple.getId();
+                dramWriteLatency();
+                database.dram.tuplesBuffer.add(isFoundNvram.tuple);
+                execute(transaction);
+            } else {
+                if (transaction.getValue() == -1) {
+                    System.out.println("can not read");
+                    System.out.println(transaction.toString());
+                } else {
+                    dramWriteLatency();
+                    database.dram.tuplesBuffer.add(new Tuple(transaction.numberOfTable, transaction.getKey(), transaction.getValue()));
+                }
+
+            }
+        }
+
+    }
+
+
+    public void execute(Transaction transaction)  {
+        if (transaction.getValue() == -1) {
+
             System.out.println(database.dram.readTuple(transaction.getKey(), transaction.numberOfTable));
-           //database.disk.pages.get(transaction.numberOfTable).table.writeTuple(transaction.getKey(), transaction.getValue());
-            database.dram.writeTuple(transaction.getKey(), transaction.getValue(), System.nanoTime() - startTimestamp);
+        } else {
+            System.out.println(database.dram.readTuple(transaction.getKey(), transaction.numberOfTable));
+
+            database.dram.writeTuple(transaction.getKey(), transaction.getValue(), System.nanoTime() / startTimestamp);
             database.logger.addToDtt(transaction);
-            System.out.println(database.disk.pages.get(transaction.numberOfTable).table.readTuple(transaction.getKey()));
             System.out.println(database.dram.readTuple(transaction.getKey(), transaction.numberOfTable));
         }
-        transaction.commitTimestamp = System.nanoTime() - startTimestamp;
+        transaction.commitTimestamp = System.nanoTime() /startTimestamp;
         System.out.println(transaction.toString());
 
     }

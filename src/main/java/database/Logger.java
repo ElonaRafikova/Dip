@@ -9,13 +9,8 @@ public class Logger {
     }
 
     public void addToDtt(Transaction transaction) {
+        Latency.dramWriteLatency();
         database.dram.dtt.add(new DTTRecord(transaction.id, transaction.numberOfTable, transaction.idTuple));
     }
 
-    public void commitTransaction(Transaction transaction, int cp, int cd) {
-        //System.out.println("commit:" + transaction.toString());
-        //database.nvram.logFile.records.add(new DTTRecord(transaction.id, transaction.numberOfTable, transaction.idTuple),cp,cd);
-
-
-    }
 }

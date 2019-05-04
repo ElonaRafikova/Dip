@@ -17,15 +17,18 @@ public class DRAM {
     public void writeTuple(int key, int value, long time) {
 
         for (Tuple tuple : tuplesBuffer) {
+            Latency.dramReadLatency();
             if (tuple.getKey() == key) {
                 tuple.setValue(value);
                 tuple.time = time;
+                Latency.dramWriteLatency();
             }
         }
 
     }
 
     public Integer readTuple(Integer key, Integer idTable) {
+        Latency.dramReadLatency();
         for (Tuple tuple : tuplesBuffer) {
             if (tuple.getKey().equals(key) && tuple.getIdTable() == idTable)
                 return tuple.getValue();

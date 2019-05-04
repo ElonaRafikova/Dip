@@ -2,6 +2,7 @@ package database;
 
 import java.util.Random;
 
+import static database.Constants.*;
 public class Page {
     public int number;
     public int idTable;
@@ -10,7 +11,7 @@ public class Page {
 
     public Page(int numberOfPage) {
         this.number = numberOfPage;
-        this.idTable = random.nextInt(1000);
+        this.idTable = random.nextInt(RANGE);
         this.table = new Table(idTable);
     }
 

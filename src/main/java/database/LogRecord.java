@@ -2,7 +2,7 @@ package database;
 
 public class LogRecord {
     public DTTRecord record;
-    public CommitGap commitGap = new CommitGap();
+    public CommitGap commitGap = new CommitGap(0,0);
 
     public LogRecord(DTTRecord record, long cp, long cd) {
         this.record=record;

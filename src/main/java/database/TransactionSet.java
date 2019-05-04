@@ -1,59 +1,58 @@
 package database;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+
+import static database.Constants.*;
+
 
 public class TransactionSet {
-    private static final int number = 5;
     private static Random random = new Random();
+    public static List<Pair> keys= new ArrayList<Pair>();
+
+    public List<Page> getInitialDatabase(){
+        List<Page> pages=new ArrayList<Page>();
+        Random random = new Random();
+        for (int i = 0; i < NUMBER_OF_PAGES; i++) {
+            Page page = new Page(i);
+            for (int j = 0; j < NUMBER_OF_TUPLES; j++) {
+                int k=random.nextInt(RANGE);
+                page.addTupleToTable(new Tuple(k,random.nextInt(RANGE)), random.nextInt(RANGE));
+                if(j% NUMBER_OF_TRANS ==0){
+                    keys.add(new Pair(k,page.idTable));
+                }
+            }
+            pages.add(page);
+        }
+        return  pages;
+    }
 
     public List<Transaction> getWriteHeavySet() {
 
-        /*List<Transaction> set = new ArrayList<Transaction>();
-        for (int i = 0; i < id * 9 / 10; i++) {
-            Transaction tr = new Transaction();
-            tr.write(random.nextInt(5), random.nextInt(1000), random.nextInt(1000));
-            set.add(tr);
-        }
-        for (int i = 0; i < id * 1 / 10; i++) {
-            Transaction tr = new Transaction();
-            tr.read(random.nextInt(5), random.nextInt(1000));
-            set.add(tr);
-        }
-        return set;
-         */
-        List<Transaction> set = new ArrayList<Transaction>();
-        for (int i = 0; i < 4; i++) {
-            Transaction tr = new Transaction();
-            tr.write(0, i, random.nextInt(1000));
-            set.add(tr);
-        }
-        for (int i = 0; i < 1; i++) {
-            Transaction tr = new Transaction();
-            tr.read(0, 2);
-            set.add(tr);
-        }
-        return set;
+        return getTransactions(90);
     }
 
     public List<Transaction> getReadHeavySet() {
-        List<Transaction> set = new ArrayList<Transaction>();
-        for (int i = 0; i < 1; i++) {
-            Transaction tr = new Transaction();
-            tr.write(1, i, random.nextInt(1000));
-            set.add(tr);
-        }
-        for (int i = 0; i < 4; i++) {
-            Transaction tr = new Transaction();
-            tr.read(1, i);
-            set.add(tr);
-        }
-        return set;
+        return getTransactions(10);
     }
 
     public List<Transaction> getBalancedSet() {
+        return getTransactions(50);
+    }
+
+    private List<Transaction> getTransactions(int i2) {
         List<Transaction> set = new ArrayList<Transaction>();
+        int a = keys.size() / 100 * i2;
+        for (int i = 0; i < a; i++) {
+            Transaction tr = new Transaction();
+            tr.write(keys.get(i).idTable, keys.get(i).key, random.nextInt(RANGE));
+            set.add(tr);
+        }
+        for (int i = a; i < keys.size(); i++) {
+            Transaction tr = new Transaction();
+            tr.read(keys.get(i).idTable, keys.get(i).key);
+            set.add(tr);
+        }
+        Collections.shuffle(set);
         return set;
     }
 }
